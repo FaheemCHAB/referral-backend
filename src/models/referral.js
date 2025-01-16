@@ -12,8 +12,15 @@ const referralSchema =  new Schema({
         required : true
     },
     mobile : {
-        type : Number,
-        required : true
+        type : String,
+        number: { type: String, required: true },
+        internationalNumber: { type: String },
+        nationalNumber: { type: String },
+        e164Number: { type: String },
+        countryCode: { type: String },
+        dialCode: { type: String },
+        required: [true, "Mobile number is required"],
+
     },
     place : {
         type : String,
@@ -27,10 +34,9 @@ const referralSchema =  new Schema({
         type : Number,
         required : true,
     },
-    status : {
-        type : String,
-        required : true,
-        default : "Pending" 
+    isActive: {
+        type: Boolean,
+        default: true
     },
     referredBy : {
         type : mongoose.Schema.Types.ObjectId,
