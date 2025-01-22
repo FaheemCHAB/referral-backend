@@ -10,12 +10,16 @@ const getAllUsers = asyncHandler(async (req, res) => {
     }
 });
 
-const createUser = asyncHandler( async (req, res) => {
+const createUser = asyncHandler(async (req, res) => {
     try {
         const user = await userService.createUser(req.body);
         res.status(201).json(user);
     } catch (error) {
-        res.status(500).json({ message: "Failed to create user", error: error.message });
+        const statusCode = error.status || 500; // Default to 500 if no status is provided
+        res.status(statusCode).json({
+            message: error.message || "Failed to create user",
+            errors: error.errors || {}, // Include field-specific errors if available
+        });
     }
 });
 
@@ -58,9 +62,46 @@ const toggleUserStatus = asyncHandler(async (req, res) => {
     }
 });
 
+const updateUser = asyncHandler(async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await userService.updateUser(userId, req.body);
+        if (user) {
+            res.status(200).json({ message: "User updated successfully", user });
+        } else {
+            res.status(404).json({ message: "User not found" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update user", error: error.message });
+    }
+});
+
+    const searchUsers = asyncHandler(async (req, res) => {
+        try {
+            const users = await userService.searchUsers(req.query);
+            res.status(200).json(users);
+        } catch (error) {
+            res.status(500).json({ message: "Failed to search users", error: error.message });
+        }
+    });
+
+
+    const getUsersByDateRange = asyncHandler(async (req, res) => {
+        try {
+            const users = await userService.getUsersByDateRange(req.query);
+            res.status(200).json(users);
+        } catch (error) {
+            res.status(500).json({ message: "Failed to search users", error: error.message });
+        }
+    });
+
+
 module.exports = {
     createUser,
     getAllUsers,
     authenticateUser,
-    toggleUserStatus
+    toggleUserStatus,
+    updateUser,
+    searchUsers,
+    getUsersByDateRange,
 };

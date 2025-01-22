@@ -54,9 +54,109 @@ const toggleReferralStatus = async (userId) => {
     }
 }
 
+const searchByReferredBy = async (referredBy, startDate, endDate) => {
+    try {
+        const query = [];
+    
+        // Join with the User collection
+        query.push({
+          $lookup: {
+            from: 'users',
+            localField: 'referredBy',
+            foreignField: '_id',
+            as: 'referredBy',
+          },
+        });
+    
+        // Unwind the referredBy array
+        query.push({
+          $unwind: {
+            path: '$referredBy',
+            preserveNullAndEmptyArrays: true, // Handle cases where referredBy might be null
+          },
+        });
+    
+        // Filter by referredBy name
+        if (referredBy) {
+          query.push({
+            $match: {
+              'referredBy.name': { $regex: referredBy, $options: 'i' },
+            },
+          });
+        }
+    
+        // Filter by date range
+        if (startDate && endDate) {
+          query.push({
+            $match: {
+              createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+            },
+          });
+        }
+    
+        // Project fields to include
+        query.push({
+          $project: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            mobile: 1,
+            place: 1,
+            qualification: 1,
+            dob: 1,
+            isActive: 1, // Ensure isActive is included
+            referredBy: { _id: 1, name: 1 }, // Include only relevant fields for referredBy
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        });
+    
+        const referrals = await Referral.aggregate(query);
+        return referrals;
+      } catch (error) {
+        throw new Error('Error occurred while searching referrals: ' + error.message);
+      }
+};
+
+const searchByName = async (name) => {
+    try { 
+        const referrals = await Referral.find({
+          $or: [
+            { name: { $regex: name, $options: "i" } }, // Search by referral's name
+            { email: { $regex: name, $options: "i" } }, // Optionally search by email
+            { mobile: { $regex: name, $options: "i" } }, // Optionally search by mobile
+          ],
+        }).populate('referredBy', 'name');
+    
+        return referrals; // Return the list of matched referrals
+      } catch (error) {
+        throw new Error("Error occurred while searching referrals: " + error.message);
+      }
+};
+
+const searchReferralsByUserId = async (userId, name) => {
+    try {
+        const referrals = await Referral.find({
+            referredBy: userId,
+            $or: [
+                { name: { $regex: name, $options: "i" } }, // Search by referral's name 
+                { email: { $regex: name, $options: "i" } }, // Optionally search by email
+                { mobile: { $regex: name, $options: "i" } }, // Optionally search by mobile            
+            ],
+        }).populate('referredBy', 'name');
+
+        return referrals; // Return the list of matched referrals
+    } catch (error) {    
+        throw new Error("Error occurred while searching referrals: " + error.message);
+    }
+};
+
 module.exports = {
     getAllReferrals,
     createReferral,
     getReferralsByUserId,
-    toggleReferralStatus
+    toggleReferralStatus,
+    searchByReferredBy,
+    searchByName,
+    searchReferralsByUserId
 }

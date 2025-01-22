@@ -6,5 +6,9 @@ router.get("/", userController.getAllUsers);
 router.post("/", userController.createUser);
 router.post("/authenticate", userController.authenticateUser);
 router.patch("/:userId", userController.toggleUserStatus);
+router.put("/:userId", userController.updateUser);
+// search by query
+router.get("/search", userController.searchUsers);
+router.get("/date-range", userController.getUsersByDateRange);
 
 module.exports = router

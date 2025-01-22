@@ -14,30 +14,49 @@ const getAllUsers = async () => {
 // Create a new user
 const createUser = async (userData) => {
     try {
-        // Hash the password before saving
-        // const hashedPassword = await bcrypt.hash(userData.password, 10);
-        // Validate and extract the mobile number
+        // Validate mobile number
         if (!userData.mobile || typeof userData.mobile !== 'object' || !userData.mobile.e164Number) {
-            throw new Error("A valid mobile number is required.");
+            throw { status: 400, message: "Validation failed", errors: { mobile: "A valid mobile number is required." } };
         }
-        userData.mobile = userData.mobile.e164Number; // Use the E.164 format
+        userData.mobile = userData.mobile.e164Number; // Use E.164 format
 
-        // Checking existing user
-        const existingUser = await User.findOne({ $or: [{ mobile: userData.mobile }, { email: userData.email }, { username: userData.username }] });
+        // Check for existing users by fields
+        const existingUser = await User.findOne({
+            $or: [
+                { mobile: userData.mobile },
+                { email: userData.email },
+                { username: userData.username },
+
+            ]
+        });
+
         if (existingUser) {
-            throw new Error("User Already Exists.");
-        }
-        const user = await User.create(userData);
+            const fieldErrors = {};
 
-        if (user) {
-            console.log("User created successfully", user);
-            return user;
-        } else {
-            console.log("User not created");
-            return null;
+            if (existingUser.mobile === userData.mobile) {
+                fieldErrors.mobile = "Mobile number already exists.";
+            }
+            if (existingUser.email === userData.email) {
+                fieldErrors.email = "Email already exists.";
+            }
+            if (existingUser.username === userData.username) {
+                fieldErrors.username = "Username already exists.";
+            }
+
+            throw { status: 400, message: "Validation failed", errors: fieldErrors };
         }
+
+        // Create user
+        const user = await User.create(userData);
+        return user;
+
     } catch (error) {
-        throw new Error("Error occurred while creating user: " + error.message);
+        // Re-throw structured error if already formatted
+        if (error.status) {
+            throw error;
+        }
+        // Wrap unexpected errors in a structured format
+        throw { status: 500, message: error.message || "An unexpected error occurred." };
     }
 };
 
@@ -112,9 +131,67 @@ const generateAccessToken = async (userId) => {
 };
 
 
+const updateUser = async (userId, userData) => {
+    try {
+        // Validate mobile number
+        if (!userData.mobile || typeof userData.mobile !== 'object' || !userData.mobile.e164Number) {
+            throw new Error("A valid mobile number is required.");
+        }
+
+        // Use the E.164 format
+        userData.mobile = userData.mobile.e164Number;
+
+        // Find user by ID
+        const user = await User.findById(userId);
+        if (user) {
+            // Assign new data to the user object
+            Object.assign(user, userData);
+            // Save the updated user
+            await user.save();
+            console.log("User updated successfully", user);
+            return user;
+        } else {
+            return null; // User not found
+        }
+    } catch (error) {
+        throw new Error("Error occurred while updating user: " + error.message);
+    }
+};
+
+const searchUsers = async (query) => {
+    try {
+        const searchTerm = query.query || ""; // Extract the search term
+        const users = await User.find({
+            $or: [
+                { name: { $regex: searchTerm, $options: "i" } },
+                { email: { $regex: searchTerm, $options: "i" } },
+                { username: { $regex: searchTerm, $options: "i" } }
+            ]
+        });
+        return users;
+    } catch (error) {
+        throw new Error("Error occurred while searching users: " + error.message);
+    }
+};
+
+
+const getUsersByDateRange = async (query) => {
+    try {
+        const startDate = new Date(query.startDate);
+        const endDate = new Date(query.endDate);
+        const users = await User.find({ createdAt: { $gte: startDate, $lte: endDate } });
+        return users;
+    } catch (error) {
+        throw new Error("Error occurred while searching users: " + error.message);
+    }
+};
+
 module.exports = {
     createUser,
     getAllUsers,
     authenticateUser,
-    toggleUserStatus
+    toggleUserStatus,
+    updateUser,
+    searchUsers,
+    getUsersByDateRange
 };

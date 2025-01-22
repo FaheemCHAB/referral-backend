@@ -30,8 +30,8 @@ const referralSchema =  new Schema({
         type : String,
         required : true
     },
-    age: {
-        type : Number,
+    dob: {
+        type : Date,
         required : true,
     },
     isActive: {
@@ -40,11 +40,12 @@ const referralSchema =  new Schema({
     },
     referredBy : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : User,
+        ref : 'User',
         required : true
     }
 },
-    {timestamps : true});
+    {timestamps : true}
+);
 
 const Referral = mongoose.model("Referral", referralSchema)
 

@@ -43,9 +43,49 @@ const toggleReferralStatus = asyncHandler(async (req, res) => {
     }
 });
 
+const searchByReferredBy = asyncHandler(async (req, res) => {
+    try {
+        const { referredBy, startDate, endDate } = req.query;
+    
+        // Convert date strings to date objects
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+    
+        // Call the service method to search for referrals with filters
+        const referrals = await referralService.searchByReferredBy(referredBy, start, end);
+        res.status(200).json(referrals);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to search referrals by referredBy", error: error.message });
+      }
+});
+
+const searchByName = asyncHandler(async (req, res) => {
+    try {
+        const { name } = req.query; // Get the name parameter from the query
+        const referrals = await referralService.searchByName(name); // Pass it to the service
+        res.status(200).json(referrals); // Return the found referrals
+      } catch (error) {
+        res.status(500).json({ message: "Failed to search referrals by name", error: error.message });
+      }
+});
+
+const searchReferralsByUserId = asyncHandler(async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { name } = req.query;
+        const referrals = await referralService.searchReferralsByUserId(userId, name);
+        res.status(200).json(referrals);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to search referrals by userId", error: error.message });
+    }
+});
+
 module.exports = {
     getAllReferrals,
     createReferral,
     getReferralsByUserId,
-    toggleReferralStatus
+    toggleReferralStatus,
+    searchByReferredBy,
+    searchByName,
+    searchReferralsByUserId
 };
