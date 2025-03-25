@@ -29,17 +29,35 @@ const createReferral =  asyncHandler(async (req, res) => {
 });
 
 
-const toggleReferralStatus = asyncHandler(async (req, res) => {
+const updateReferralStatus = asyncHandler(async (req, res) => {
     try {
-        const { userId } = req.params;
-        const referral = await referralService.toggleReferralStatus(userId);
+        const { userId } = req.params; // This is actually the referralId in your case
+        const { attendanceStatus } = req.body; // Match the frontend's field name
+        
+        console.log('Referral ID received:', userId); // Log for debugging
+        console.log('New status received:', attendanceStatus); // Log for debugging
+        
+        if (!attendanceStatus) {
+            return res.status(400).json({ message: "Attendance status is required" });
+        }
+        
+        // Calling service function with corrected parameter names
+        const referral = await referralService.updateReferralStatus(userId, attendanceStatus);
+        
         if (referral) {
-            res.status(200).json({ message: "Referral status updated successfully", referral });
+            res.status(200).json({ 
+                message: "Referral status updated successfully", 
+                referral 
+            });
         } else {
             res.status(404).json({ message: "Referral not found" });
         }
     } catch (error) {
-        res.status(500).json({ message: "Failed to update referral status", error: error.message });
+        console.error("Error in updateReferralStatus controller:", error);
+        res.status(500).json({ 
+            message: "Failed to update referral status", 
+            error: error.message 
+        });
     }
 });
 
@@ -80,12 +98,42 @@ const searchReferralsByUserId = asyncHandler(async (req, res) => {
     }
 });
 
+const getReferralCount = asyncHandler(async (req, res) => {
+    try {
+        const count = await referralService.getReferralCount();
+        res.status(200).json({ count });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch referral count", error: error.message });
+    }
+}); 
+
+const getReferralStatusCounts = asyncHandler(async (req, res) => {
+    try {
+        const counts = await referralService.getReferralStatusCounts();
+        res.status(200).json(counts);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch referral status counts", error: error.message });
+    }
+});
+
+const getRecentReferrals = asyncHandler(async (req, res) => {
+    try {
+        const referrals = await referralService.getRecentReferrals();
+        res.status(200).json(referrals);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch recent referrals", error: error.message });
+    }
+}); 
+
 module.exports = {
     getAllReferrals,
     createReferral,
     getReferralsByUserId,
-    toggleReferralStatus,
+    updateReferralStatus,
     searchByReferredBy,
     searchByName,
-    searchReferralsByUserId
+    searchReferralsByUserId,
+    getReferralCount,
+    getReferralStatusCounts,
+    getRecentReferrals
 };

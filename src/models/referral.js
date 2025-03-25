@@ -1,52 +1,77 @@
 const mongoose = require("mongoose");
 const { Schema } = require("mongoose");
-const User = require("./user");
 
-const referralSchema =  new Schema({
-    name : {
-        type : String,
-        required : true
+
+const referralSchema = new Schema({
+    name: {
+        type: String,
+        required: true
     },
-    email : {
-        type : String,
-        required : true
+    email: {
+        type: String,
+        required: false, 
     },
-    mobile : {
-        type : String,
-        number: { type: String, required: true },
-        internationalNumber: { type: String },
-        nationalNumber: { type: String },
-        e164Number: { type: String },
-        countryCode: { type: String },
-        dialCode: { type: String },
+    mobile: {
+        type: String,
         required: [true, "Mobile number is required"],
+        validate: {
+            validator: function (v) {
+                // Basic E.164 format validation (starts with + followed by digits)
+                return /^\+\d+$/.test(v);
+            },
+            message: props => `${props.value} is not a valid mobile number!`
+        }
+    },
+    place: {
+        type: String,
+        required: false,
+    },
+    qualification: {
+        type: String,
+        required: false,
+    },
+    passOutYear: {
+        type: Date,
+        required: false,
+    },
+    attendanceStatus: {
+        type: String,
+        enum: ["Attended", "Not-Attended", "Registered", "Joined"], // Enum-like behavior
+        default: "Not-Attended",
+    },
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    remarks: {
+        type: String,
+        required: false,
+    },
+    areaOfInterest: {
+        type: String,
+        required: false,
+    },
+    otherInterest: {
+        type: String,
+        required: false,
+    },
+    careerStage: {
+        type: Object,
+        default: {
+            nonIT: false,
+            backlog: false,
+            careerBreak: false,
+            fresher: false,
+            unskilled: false,
+            careerSwitch: false
+        }
+    },
 
-    },
-    place : {
-        type : String,
-        required : true
-    },
-    qualification : {
-        type : String,
-        required : true
-    },
-    dob: {
-        type : Date,
-        required : true,
-    },
-    isActive: {
-        type: Boolean,
-        default: true
-    },
-    referredBy : {
-        type : mongoose.Schema.Types.ObjectId,
-        ref : 'User',
-        required : true
-    }
 },
-    {timestamps : true}
+    { timestamps: true }
 );
 
-const Referral = mongoose.model("Referral", referralSchema)
+const Referral = mongoose.model("Referral", referralSchema);
 
-module.exports = Referral
+module.exports = Referral;

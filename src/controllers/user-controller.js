@@ -11,6 +11,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 });
 
 const createUser = asyncHandler(async (req, res) => {
+    console.log("Received user data:", req.body);
     try {
         const user = await userService.createUser(req.body);
         res.status(201).json(user);
@@ -76,24 +77,33 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 });
 
-    const searchUsers = asyncHandler(async (req, res) => {
-        try {
-            const users = await userService.searchUsers(req.query);
-            res.status(200).json(users);
-        } catch (error) {
-            res.status(500).json({ message: "Failed to search users", error: error.message });
-        }
-    });
+const searchUsers = asyncHandler(async (req, res) => {
+    try {
+        const users = await userService.searchUsers(req.query);
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to search users", error: error.message });
+    }
+});
 
 
-    const getUsersByDateRange = asyncHandler(async (req, res) => {
-        try {
-            const users = await userService.getUsersByDateRange(req.query);
-            res.status(200).json(users);
-        } catch (error) {
-            res.status(500).json({ message: "Failed to search users", error: error.message });
-        }
-    });
+const getUsersByDateRange = asyncHandler(async (req, res) => {
+    try {
+        const users = await userService.getUsersByDateRange(req.query);
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to search users", error: error.message });
+    }
+});
+
+const getUserReferralCounts = asyncHandler(async (req, res) => {
+    try {
+        const counts = await userService.getUserReferralCounts(req.params.userId);
+        res.status(200).json(counts);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch user referral counts", error: error.message });
+    }
+});
 
 
 module.exports = {
@@ -104,4 +114,5 @@ module.exports = {
     updateUser,
     searchUsers,
     getUsersByDateRange,
+    getUserReferralCounts
 };

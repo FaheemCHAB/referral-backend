@@ -1,6 +1,8 @@
 const express  = require("express");
 const userRouter = require("./routes/user-routes");
 const referralRouter = require("./routes/referral-routes");
+const rewardRouter = require("./routes/reward-routes");
+const bonusRouter = require("./routes/bonus-routes");
 const connectToDB = require("./config/db");
 const cors = require("cors");
 
@@ -18,6 +20,8 @@ app.get("/", (req, res) => {
 
 app.use("/user", userRouter);
 app.use("/referral", referralRouter);
+app.use("/reward", rewardRouter);
+app.use("/bonus", bonusRouter);
 
 const PORT = process.env.PORT || 4000;
 

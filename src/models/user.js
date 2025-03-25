@@ -15,24 +15,35 @@ const userSchema = new Schema({
         unique: true,
         match: [/\S+@\S+\.\S+/, "Invalid email address"],
     },
+    // mobile: {
+    //     type: String,
+    //     required: [true, "Mobile number is required"],
+    //     validate: {
+    //     validator: function(v) {
+    //         // Basic E.164 format validation (starts with + followed by digits)
+    //         return /^\+\d+$/.test(v);
+    //     },
+    //     message: props => `${props.value} is not a valid mobile number!`
+    //     }
+    // }
     mobile: {
         type: String,
-        number: { type: String, required: true },
-        internationalNumber: { type: String },
-        nationalNumber: { type: String },
-        e164Number: { type: String },
-        countryCode: { type: String },
-        dialCode: { type: String },
         required: [true, "Mobile number is required"],
-        // validate: {
-        //   validator: (v) => /^\d{10}$/.test(v),
-        //   message: "Mobile number must be 10 digits",
-        // },
     },
     password: {
         type: String,
         required: [true, "Password is required"],
         minlength: [6, "Password must be at least 6 characters"],
+    },
+    statusCounts: {
+        type: Object,
+        default: {
+            totalLeads: 0,
+            attended: 0,
+            notAttended: 0,
+            registered: 0,
+            joined: 0
+        }
     },
     username: {
         type: String,

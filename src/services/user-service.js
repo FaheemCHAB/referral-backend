@@ -1,5 +1,5 @@
 const User = require("../models/user");
-const bcrypt = require("bcrypt");
+const { sendWelcomeEmail } = require('../utils/emailService');
 
 // Fetch all users
 const getAllUsers = async () => {
@@ -14,50 +14,45 @@ const getAllUsers = async () => {
 // Create a new user
 const createUser = async (userData) => {
     try {
-        // Validate mobile number
-        if (!userData.mobile || typeof userData.mobile !== 'object' || !userData.mobile.e164Number) {
-            throw { status: 400, message: "Validation failed", errors: { mobile: "A valid mobile number is required." } };
+        // Remove `_id` if it's an empty string or invalid
+        if (!userData._id || userData._id === "") {
+          delete userData._id;
         }
-        userData.mobile = userData.mobile.e164Number; // Use E.164 format
-
-        // Check for existing users by fields
+        
+        // Check for existing user
         const existingUser = await User.findOne({
-            $or: [
-                { mobile: userData.mobile },
-                { email: userData.email },
-                { username: userData.username },
-
-            ]
+          $or: [
+            { mobile: userData.mobile },
+            { email: userData.email },
+            { username: userData.username }
+          ],
         });
-
+        
         if (existingUser) {
-            const fieldErrors = {};
-
-            if (existingUser.mobile === userData.mobile) {
-                fieldErrors.mobile = "Mobile number already exists.";
-            }
-            if (existingUser.email === userData.email) {
-                fieldErrors.email = "Email already exists.";
-            }
-            if (existingUser.username === userData.username) {
-                fieldErrors.username = "Username already exists.";
-            }
-
-            throw { status: 400, message: "Validation failed", errors: fieldErrors };
+          const fieldErrors = {};
+          if (existingUser.mobile === userData.mobile) fieldErrors.mobile = "Mobile number already exists.";
+          if (existingUser.email === userData.email) fieldErrors.email = "Email already exists.";
+          if (existingUser.username === userData.username) fieldErrors.username = "Username already exists.";
+          
+          throw { status: 400, message: "Validation failed", errors: fieldErrors };
         }
-
+        
         // Create user
+        userData.isActive = true;
         const user = await User.create(userData);
-        return user;
-
-    } catch (error) {
-        // Re-throw structured error if already formatted
-        if (error.status) {
-            throw error;
+        
+        // Send welcome email with credentials
+        try {
+          await sendWelcomeEmail(user);
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
         }
-        // Wrap unexpected errors in a structured format
+        
+        return user;
+      } catch (error) {
+        if (error.status) throw error;
         throw { status: 500, message: error.message || "An unexpected error occurred." };
-    }
+      }
 };
 
 // Authenticate user
@@ -91,6 +86,22 @@ const authenticateUser = async (userData) => {
         throw new Error("Error occurred while authenticating user: " + error.message);
     }
 };
+
+const getUserReferralCounts = async (userId) => {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      console.log(user);
+      
+      console.log(user.statusCounts);
+      
+      return user.statusCounts;
+    } catch (error) {
+      throw new Error("Error fetching user referral counts: " + error.message);
+    }
+  };
 
 
 const toggleUserStatus = async (userId) => {
@@ -134,12 +145,12 @@ const generateAccessToken = async (userId) => {
 const updateUser = async (userId, userData) => {
     try {
         // Validate mobile number
-        if (!userData.mobile || typeof userData.mobile !== 'object' || !userData.mobile.e164Number) {
-            throw new Error("A valid mobile number is required.");
-        }
+        // if (!userData.mobile || typeof userData.mobile !== 'object' || !userData.mobile.e164Number) {
+        //     throw new Error("A valid mobile number is required.");
+        // }
 
         // Use the E.164 format
-        userData.mobile = userData.mobile.e164Number;
+        // userData.mobile = userData.mobile.e164Number;    
 
         // Find user by ID
         const user = await User.findById(userId);
@@ -164,8 +175,8 @@ const searchUsers = async (query) => {
         const users = await User.find({
             $or: [
                 { name: { $regex: searchTerm, $options: "i" } },
-                { email: { $regex: searchTerm, $options: "i" } },
-                { username: { $regex: searchTerm, $options: "i" } }
+                // { email: { $regex: searchTerm, $options: "i" } },
+                // { username: { $regex: searchTerm, $options: "i" } }
             ]
         });
         return users;
@@ -177,8 +188,14 @@ const searchUsers = async (query) => {
 
 const getUsersByDateRange = async (query) => {
     try {
+        // Convert startDate and endDate to UTC
         const startDate = new Date(query.startDate);
         const endDate = new Date(query.endDate);
+
+        // Adjust the endDate to include the full day in UTC
+        endDate.setUTCHours(23, 59, 59, 999);
+
+        // Fetch users within the date range
         const users = await User.find({ createdAt: { $gte: startDate, $lte: endDate } });
         return users;
     } catch (error) {
@@ -193,5 +210,6 @@ module.exports = {
     toggleUserStatus,
     updateUser,
     searchUsers,
-    getUsersByDateRange
+    getUsersByDateRange,
+    getUserReferralCounts
 };
