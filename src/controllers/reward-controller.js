@@ -75,6 +75,23 @@ const getAllUserBonusPoints = asyncHandler(async (req, res) => {
     }
 });
 
+const updateRewardByrewardId = asyncHandler(async (req, res) => {
+    try {
+        const { rewardId } = req.params; // Changed from userId to rewardId
+        const { amount } = req.body; // Get amount from request body
+        
+        const reward = await rewardService.updateRewardByrewardId(rewardId, amount);
+        
+        if (reward) {
+            res.status(200).json({ message: "Reward updated successfully", reward });
+        } else {
+            res.status(404).json({ message: "Reward not found" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update reward", error: error.message });
+    }
+});
+
 
 module.exports = {
     getAllRewards,
@@ -82,5 +99,6 @@ module.exports = {
     getRewardsByUserId,
     updateRewardStatus,
     getAllUserBonusPoints,
+    updateRewardByrewardId
     
 };

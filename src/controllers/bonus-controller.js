@@ -66,17 +66,21 @@ const updateBonusByUserId = async (req, res) => {
         console.log("Request params:", req.params);
         
         const { data } = req.body;
-        const { userId } = req.params;
+        const bonusHistoryId = req.params.bonusId;
         
-        // Validate required fields
-        // if (!userId || !data) {
-        //     return res.status(400).json({ message: "User ID and status are required" });
-        // }
+        // Get the updated history entry
+        const updatedHistory = await bonusService.updateBonusByUserId(bonusHistoryId, data);
         
-        const bonus = await bonusService.updateBonusByUserId(userId, data);
-        res.status(200).json(bonus);
+        if (!updatedHistory) {
+            return res.status(404).json({ message: "Bonus history entry not found" });
+        }
+        
+        res.status(200).json(updatedHistory);
     } catch (error) {
-        res.status(500).json({ message: "Failed to update bonus status", error: error.message });
+        res.status(500).json({ 
+            message: "Failed to update bonus history", 
+            error: error.message 
+        });
     }
 };
 

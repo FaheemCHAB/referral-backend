@@ -43,7 +43,10 @@ const createUser = async (userData) => {
         
         // Send welcome email with credentials
         try {
+            console.log("Sending welcome email...");
+            
           await sendWelcomeEmail(user);
+          console.log("Welcome email sent successfully");
         } catch (emailError) {
           console.error("Failed to send welcome email:", emailError);
         }

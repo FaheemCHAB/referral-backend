@@ -141,25 +141,55 @@ const updateBonusStatus = async (bonusId, newStatus) => {
     }
 };
 
-const updateBonusByUserId = async (userId, data) => {
+const updateBonusByUserId = async (bonusId, data) => {
     try {
-        console.log("Request body:", data);
-        console.log("Request params:", userId);
+        console.log("Updating bonus history with ID:", bonusId);
         
-                // Calculate amount based on bonus points
-                if (data.bonusPoints) {
-                    data.amount = calculateAmount(data.bonusPoints);
-                }
-        const bonus = await Bonus.findById(userId);
+        // Find the bonus document containing the history entry
+        const bonus = await Bonus.findOne({ "history._id": bonusId });
+        
         if (!bonus) {
+            console.log("No bonus contains history with ID:", bonusId);
             return null;
         }
         
-        Object.assign(bonus, data);
+        // Find the specific history entry in the array
+        const historyIndex = bonus.history.findIndex(
+            item => item._id.toString() === bonusId
+        );
+        
+        if (historyIndex === -1) {
+            console.log("History entry not found in bonus");
+            return null;
+        }
+        
+        // Calculate amount based on bonus points if needed
+        if (data.bonusPoints) {
+            data.amount = calculateAmount(data.bonusPoints);
+        }
+        
+        // Update the specific history entry
+        Object.keys(data).forEach(key => {
+            bonus.history[historyIndex][key] = data[key];
+        });
+        
+        // Update the parent document's total values
+        bonus.bonusPoints = bonus.history.reduce(
+            (total, item) => total + item.bonusPoints, 0
+        );
+        
+        bonus.amount = bonus.history.reduce(
+            (total, item) => total + item.amount, 0
+        );
+        
+        // Save the parent document
         await bonus.save();
-        return bonus;
+        
+        // Return the updated history entry
+        return bonus.history[historyIndex];
     } catch (error) {
-        throw new Error("Error occurred while updating bonus: " + error.message);
+        console.error("Error updating bonus history:", error);
+        throw new Error("Error occurred while updating bonus history: " + error.message);
     }
 };
 

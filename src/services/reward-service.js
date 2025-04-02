@@ -182,6 +182,58 @@ const getAllUserBonusPoints = async () => {
     }
 };
 
+const updateRewardByrewardId = async (rewardId, data) => {
+    try {
+        console.log("Updating reward history with ID:", rewardId);
+        
+        // Find the bonus document containing the history entry
+        const reward = await Reward.findOne({ "history._id": rewardId });
+        
+        if (!reward) {
+            console.log("No reward contains history with ID:", rewardId);
+            return null;
+        }
+        
+        // Find the specific history entry in the array
+        const historyIndex = reward.history.findIndex(
+            item => item._id.toString() === rewardId
+        );
+        
+        if (historyIndex === -1) {
+            console.log("History entry not found in reward");
+            return null;
+        }
+        
+        // Calculate amount based on reward points if needed
+        // if (data.rewardPoints) {
+        //     data.amount = calculateAmount(data.rewardPoints);
+        // }
+        
+        // Update the specific history entry
+        Object.keys(data).forEach(key => {
+            reward.history[historyIndex][key] = data[key];
+        });
+        
+        // Update the parent document's total values
+        reward.rewardPoints = reward.history.reduce(
+            (total, item) => total + item.rewardPoints, 0
+        );
+        
+        reward.amount = reward.history.reduce(
+            (total, item) => total + item.amount, 0
+        );
+        
+        // Save the parent document
+        await reward.save();
+        
+        // Return the updated history entry
+        return reward.history[historyIndex];
+    } catch (error) {
+        console.error("Error updating reward history:", error);
+        throw new Error("Error occurred while updating reward history: " + error.message);
+    }
+};
+
 
 
 module.exports = {
@@ -191,5 +243,6 @@ module.exports = {
     searchRewards,
     updateRewardStatus,
     getAllUserBonusPoints,
+    updateRewardByrewardId
  
 };

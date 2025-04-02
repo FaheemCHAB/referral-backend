@@ -7,4 +7,4 @@ router.patch("/change-status/:bonusId", bonusController.updateBonusStatus);
 router.get("/:userId", bonusController.getBonusesByUserId);
 router.put("/:bonusId", bonusController.updateBonusByUserId);
 
-module.exports = router
+module.exports = router 

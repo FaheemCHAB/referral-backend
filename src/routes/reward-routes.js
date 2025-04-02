@@ -6,6 +6,7 @@ router.post("/", rewardController.createOrUpdateReward);
 router.get("/bonus-count",rewardController.getAllUserBonusPoints);
 router.patch("/change-status/:rewardId", rewardController.updateRewardStatus);
 router.get("/:userId", rewardController.getRewardsByUserId);
+router.put("/:rewardId", rewardController.updateRewardByrewardId);
 // router.get("/search", rewardController.searchRewards);
 
 module.exports = router
