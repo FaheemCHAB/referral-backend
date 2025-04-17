@@ -5,7 +5,16 @@ const getAllRewards = async () => {
         const rewards = await Reward.find().populate({
             path: "user", // Reference the "user" field
             select: "name email" // Fetch specific user fields
+        }).populate({
+            path: "history.referralId", // Change this to populate referralId inside history
+            select: "name email mobile" // Select fields you want from the Referral model
         });
+
+        if(!rewards || rewards.length === 0) {  
+            console.log("No rewards found");
+            return null;
+        }
+
         return rewards;
         
     } catch (error) {
@@ -13,53 +22,78 @@ const getAllRewards = async () => {
     }
 };              
 
-const createOrUpdateReward = async (userId, amountToAdd, status,remarks) => { 
-    try {
-        let reward = await Reward.findOne({ user: userId });
+const createOrUpdateReward = async (userId, referralId, amountToAdd, status, remarks) => {
+    console.log("createOrUpdateReward started");
+  try {
+    console.log("User ID received:", userId);
+    console.log("Referral ID received:", referralId);
+    console.log("Amount received:", amountToAdd);
+    
+    if (!referralId) {
+      console.log("referralId is missing");
+      throw new Error("ReferralId is missing");
+    }
 
-        if (!reward) {
-            // Create new reward with an initial history entry
-            reward = new Reward({
-                user: userId,
-                amount: amountToAdd,
-                status: status || "pending",
-                history: [
-                    {
-                        amount: amountToAdd,
-                        status: status || "pending",
-                        date: new Date(),
-                        remarks: remarks || "",
-                    }
-                ]
-            });
-        } else {
-            // Add new entry to history
-            reward.history.push({
-                amount: amountToAdd,
-                status: status || reward.status,
-                date: new Date(),
-                remarks: remarks || "",
-            });
+    // Check if this referral has already been rewarded
+    const existingReward = await Reward.findOne({
+      user: userId,
+      "history.referralId": referralId
+    });
 
-            // Recalculate total bonus points and amount based on history
-            // reward.bonusPoints = reward.history.reduce((total, entry) => {
-            //     // Ensure we're adding the actual bonus points, not concatenating
-            //     return total + (entry.bonusPoints || 0);
-            // }, 0);
-            
-            reward.amount = reward.history.reduce((total, entry) => total + (entry.amount || 0), 0);
+    if (existingReward) {
+      console.log("This referral has already been rewarded");
+      throw new Error("This referral has already been rewarded");
+    }
 
-            // Update status if a new status is provided
-            if (status) {
-                reward.status = status;
-            }
-        }
+    let reward = await Reward.findOne({ user: userId });
+    console.log("reward found:", reward);
 
-        await reward.save();
-        return reward;
-    } catch (error) {
-        throw new Error("Error occurred while updating reward: " + error.message);
-    }  
+    if (!reward) {
+      console.log("No reward found, creating a new one");
+      // Create new reward with an initial history entry
+      reward = new Reward({
+        user: userId,
+        amount: amountToAdd,
+        status: status || "pending",
+        history: [
+          {
+            amount: amountToAdd,
+            status: status || "pending",
+            date: new Date(),
+            remarks: remarks || "",
+            referralId: referralId  // Store referralId in history
+          }
+        ]
+      });
+    } else {
+      console.log("Reward found, updating it");
+      // Add new entry to history with the referralId
+      reward.history.push({
+        amount: amountToAdd,
+        status: status || reward.status,
+        date: new Date(),
+        remarks: remarks || "",
+        referralId: referralId  // Store referralId in history
+      });
+      
+      reward.amount = reward.history.reduce((total, entry) => total + (entry.amount || 0), 0);
+
+      // Update status if a new status is provided
+      if (status) {
+        reward.status = status;
+      }
+    }
+    
+    console.log("Before reward save");
+    await reward.save();
+    console.log("reward saved");
+    return reward;
+  } catch (error) {
+    console.log("Error occurred while updating reward:", error);
+    throw new Error("Error occurred while updating reward: " + error.message);
+  } finally {
+    console.log("createOrUpdateReward ended");
+  }
 };
 
 

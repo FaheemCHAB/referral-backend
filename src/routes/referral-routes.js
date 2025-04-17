@@ -10,6 +10,7 @@ router.get("/count", referralController.getReferralCount);
 router.get("/status-counts", referralController.getReferralStatusCounts);
 router.get("/recent", referralController.getRecentReferrals);
 router.post("/", referralController.createReferral);
+router.get("/joined-referrals/:userId", referralController.getJoinedReferralsByUserId);
 router.get("/:userId", referralController.getReferralsByUserId);
 router.patch("/:userId", referralController.updateReferralStatus);  
 

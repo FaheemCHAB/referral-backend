@@ -57,7 +57,7 @@ const sendWelcomeEmail = async (user) => {
                   
                   <!-- CTA Button -->
                   <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.APP_URL}" style="background-color: #5C6BC0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 600; display: inline-block; font-size: 16px;">Login to Your Account</a>
+                    <a href="${process.env.REDIRECT_URL}" style="background-color: #5C6BC0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 600; display: inline-block; font-size: 16px;">Login to Your Account</a>
                   </div>
                                     
                   <p style="color: #333; font-size: 16px; line-height: 1.6;">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>

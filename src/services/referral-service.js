@@ -1,12 +1,53 @@
 const Referral = require("../models/referral");
 const User = require("../models/user");
+const Reward = require("../models/rewards");
+const {sendAdminReferralNotification} = require("../utils/sendAdminReferralNotification");
 
 const getAllReferrals = async () => {
   try {
+    // First get all referrals with basic information
     const referrals = await Referral.find()
-      .sort({ createdAt: -1 }) // Sort by creation date, newest first
+      .sort({ createdAt: -1 }) 
       .populate('referredBy', 'name');
-    return referrals;
+    
+    // For each referral that has "Joined" status, get payment status from rewards
+    const referralsWithPaymentStatus = await Promise.all(
+      referrals.map(async (referral) => {
+        const referralObj = referral.toObject();
+        
+        // Only look for payment status if the referral has "Joined" status
+        if (referral.attendanceStatus === "Joined") {
+          // Find reward history entry for this referral
+          const rewardInfo = await Reward.findOne(
+            { 
+              "history.referralId": referral._id 
+            },
+            { 
+              "history.$": 1,
+              "user": 1
+            }
+          );
+          
+          if (rewardInfo && rewardInfo.history && rewardInfo.history.length > 0) {
+            // Add payment status to referral object
+            referralObj.paymentStatus = rewardInfo.history[0].status;
+            referralObj.paymentAmount = rewardInfo.history[0].amount;
+            referralObj.paymentDate = rewardInfo.history[0].date;
+            referralObj.paymentRemarks = rewardInfo.history[0].remarks;
+          } else {
+            // No payment record found
+            referralObj.paymentStatus = "not-processed";
+          }
+        } else {
+          // Not eligible for payment yet
+          referralObj.paymentStatus = "not-eligible";
+        }
+        
+        return referralObj;
+      })
+    );
+    
+    return referralsWithPaymentStatus;
   } catch (error) {
     throw new Error("Error occurred while fetching referrals: " + error.message);
   }
@@ -62,11 +103,31 @@ const createReferral = async (referralData) => {
       console.log("Updated user statusCounts:", user.statusCounts);
     }
 
+    // Send notification email to admin
+    try {
+      // Get the admin email from environment variables or configuration
+      const adminEmail = process.env.ADMIN_EMAIL;
+      
+      // Only send if admin email is configured
+      if (adminEmail) {
+        // If you need the referring user's name, fetch it
+        if (user) {
+          referral.referredByName = user.name || user.username;
+        }
+        
+        await sendAdminReferralNotification(referral, adminEmail);
+        console.log("Admin notification email sent for new referral");
+      }
+    } catch (emailError) {
+      // Log email error but don't fail the referral creation
+      console.error("Failed to send admin notification email:", emailError);
+    }
+
     return referral;
   } catch (error) {
     throw new Error("Error occurred while creating referral: " + error.message);
   }
-}
+};
 
 const updateReferralStatus = async (referralId, newStatus) => {
   const validStatuses = ["Attended", "Not-Attended", "Registered", "Joined"];
@@ -278,6 +339,39 @@ const getRecentReferrals = async () => {
   }
 }
 
+const getJoinedReferralsByUserId = async (userId) => {
+  try {
+    // Get all joined referrals that were referred by this user
+    const joinedReferrals = await Referral.find({ 
+      referredBy: userId,
+      attendanceStatus: "Joined" 
+    }).populate('referredBy', 'name');
+    
+    // Get all rewards for this user
+    const rewards = await Reward.find({ user: userId });
+    
+    // Extract all referral IDs that have been rewarded from history entries
+    const rewardedReferralIds = new Set();
+    
+    rewards.forEach(reward => {
+      reward.history.forEach(entry => {
+        if (entry.referralId) {
+          rewardedReferralIds.add(entry.referralId.toString());
+        }
+      });
+    });
+    
+    // Filter out referrals that have already been rewarded
+    const unrewardedReferrals = joinedReferrals.filter(
+      referral => !rewardedReferralIds.has(referral._id.toString())
+    );
+    
+    return unrewardedReferrals;
+  } catch (error) {
+    throw new Error("Error occurred while fetching unrewarded joined referrals: " + error.message);
+  }
+}
+
 module.exports = {
   getAllReferrals,
   createReferral,
@@ -288,5 +382,6 @@ module.exports = {
   searchReferralsByUserId,
   getReferralCount,
   getReferralStatusCounts,
-  getRecentReferrals
+  getRecentReferrals,
+  getJoinedReferralsByUserId
 }

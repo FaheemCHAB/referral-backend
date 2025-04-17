@@ -5,7 +5,6 @@ const rewardSchema = new Schema({
     user : {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        
     },
     amount : {
         type: Number,
@@ -19,6 +18,10 @@ const rewardSchema = new Schema({
         {
           amount: Number,
           date: { type: Date, default: Date.now },
+          referralId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Referral",
+        },
           remarks : {
             type: String,
             required: false

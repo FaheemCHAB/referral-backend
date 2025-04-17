@@ -15,17 +15,6 @@ const userSchema = new Schema({
         unique: true,
         match: [/\S+@\S+\.\S+/, "Invalid email address"],
     },
-    // mobile: {
-    //     type: String,
-    //     required: [true, "Mobile number is required"],
-    //     validate: {
-    //     validator: function(v) {
-    //         // Basic E.164 format validation (starts with + followed by digits)
-    //         return /^\+\d+$/.test(v);
-    //     },
-    //     message: props => `${props.value} is not a valid mobile number!`
-    //     }
-    // }
     mobile: {
         type: String,
         required: [true, "Mobile number is required"],

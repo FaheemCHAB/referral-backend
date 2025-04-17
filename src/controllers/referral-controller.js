@@ -125,6 +125,16 @@ const getRecentReferrals = asyncHandler(async (req, res) => {
     }
 }); 
 
+const getJoinedReferralsByUserId = asyncHandler(async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const referrals = await referralService.getJoinedReferralsByUserId(userId);
+        res.status(200).json(referrals);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch joined referrals by userId", error: error.message });
+    }
+});
+
 module.exports = {
     getAllReferrals,
     createReferral,
@@ -135,5 +145,6 @@ module.exports = {
     searchReferralsByUserId,
     getReferralCount,
     getReferralStatusCounts,
-    getRecentReferrals
+    getRecentReferrals,
+    getJoinedReferralsByUserId
 };

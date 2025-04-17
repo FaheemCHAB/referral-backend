@@ -12,7 +12,13 @@ const app = express();
 
 app.use(express.json());
 
-app.use(cors());
+const options = {
+    origin: ['http://localhost:4200', process.env.APP_URL],
+    credentials: true // if you're using cookies or auth headers
+  };
+  
+
+app.use(cors(options));
 
 app.get("/", (req, res) => {
     res.send("Hello World");

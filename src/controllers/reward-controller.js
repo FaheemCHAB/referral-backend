@@ -12,13 +12,15 @@ const getAllRewards = asyncHandler(async (req, res) => {
 
 const createOrUpdateReward = asyncHandler(async (req, res) => {
     try {
-        const { userId, amount, status, remarks } = req.body;
+        const { userId, referralId, amount, status, remarks } = req.body;
+        console.log("Request body:", req.body); // Log the request body for debugging
+        
 
         if (!userId  || amount == null) {
             return res.status(400).json({ message: "Missing required fields (userId, amount)" });
         }
 
-        const reward = await rewardService.createOrUpdateReward(userId, amount, status, remarks);
+        const reward = await rewardService.createOrUpdateReward(userId, referralId , amount, status, remarks);
         res.status(201).json({ 
             message: "Reward updated successfully", 
             reward 
