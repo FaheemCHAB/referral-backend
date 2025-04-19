@@ -41,7 +41,7 @@ const sendWelcomeEmail = async (user) => {
               <!-- Body Content -->
               <tr>
                 <td style="padding: 40px;">
-                  <p style="color: #333; font-size: 16px; line-height: 1.6; margin-top: 0;">Hello,</p>
+                  <p style="color: #333; font-size: 16px; line-height: 1.6; margin-top: 0;">Hello ${user.name},</p>
                   <p style="color: #333; font-size: 16px; line-height: 1.6;">Your account has been successfully created by an administrator. You can now start using all the features of ReferNrich.</p>
                   
                   <!-- Credentials Box -->
