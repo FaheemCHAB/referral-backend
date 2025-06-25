@@ -48,7 +48,7 @@ const userSchema = new Schema({
         default: null
     }
 },
-    { timestamps: true }
+    { timestamps: true, versionKey: false }
 );
 
 userSchema.methods.generateAcessToken = function () {

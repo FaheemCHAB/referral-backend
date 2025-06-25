@@ -152,7 +152,7 @@ const updateRewardStatus = async (historyItemId, newStatus) => {
 
 const getRewardsByUserId = async (userId) => {
     try {
-        const rewards = await Reward.find({ user: userId });
+        const rewards = await Reward.find({ user: userId })
         return rewards;
         
     } catch (error) {

@@ -69,7 +69,7 @@ const referralSchema = new Schema({
     },
 
 },
-    { timestamps: true }
+    { timestamps: true , versionKey: false } // Disable versioning
 );
 
 const Referral = mongoose.model("Referral", referralSchema);

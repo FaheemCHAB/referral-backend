@@ -33,7 +33,7 @@ const rewardSchema = new Schema({
         },
       ],
 },
-    {timestamps : true}
+    {timestamps : true,versionKey: false} // Disable versioning
 );
 
 const Reward = mongoose.model("Reward", rewardSchema);

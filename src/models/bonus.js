@@ -36,7 +36,7 @@ const bonusSchema = new Schema({
         },
     ],
 },
-    { timestamps: true }
+    { timestamps: true , versionKey: false } // Disable versioning
 );
 
 module.exports = mongoose.model("Bonus", bonusSchema);

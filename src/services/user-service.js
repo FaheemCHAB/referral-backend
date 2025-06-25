@@ -4,7 +4,9 @@ const { sendWelcomeEmail } = require('../utils/emailService');
 // Fetch all users
 const getAllUsers = async () => {
     try {
-        const users = await User.find();
+        const users = await User.find({})
+            .select("-password -refreshToken") // Exclude sensitive fields
+            .sort({ createdAt: -1 }); // Sort by creation date, most recent first
         return users;
     } catch (error) {
         throw new Error("Error occurred while fetching users: " + error.message);
