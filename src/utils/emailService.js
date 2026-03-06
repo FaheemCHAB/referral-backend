@@ -1,15 +1,7 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 
-
-// Configure your email transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or another email service
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Sends welcome email with credentials to a newly created user
@@ -18,8 +10,8 @@ const transporter = nodemailer.createTransport({
  */
 const sendWelcomeEmail = async (user) => {
   try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+      from: 'ReferNrich <onboarding@resend.dev>',
       to: user.email,
       subject: '🎉 Welcome aboard, ' + user.name + '! Your ReferNrich journey begins now',
       html: `
@@ -186,19 +178,23 @@ const sendWelcomeEmail = async (user) => {
         </body>
         </html>
       `
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    return info;
+    if (error) {
+      console.error('Error sending welcome email:', error);
+      throw error;
+    }
+
+    console.log('Email sent successfully:', data.id);
+    return data;
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('Failed to send welcome email:', error);
     throw error;
   }
-  };
+};
 
 
-  /**
+/**
  * Sends a special celebration email when referral status becomes "Joined"
  * @param {Object} referrer - User who made the referral
  * @param {Object} referral - The referral object with "Joined" status
@@ -206,8 +202,8 @@ const sendWelcomeEmail = async (user) => {
  */
 const sendReferralJoinedCelebrationEmail = async (referrer, referral) => {
   try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+      from: 'ReferNrich <onboarding@resend.dev>',
       to: referrer.email,
       subject: `🎉 Congratulations! ${referral.name} has joined through your referral!`,
       html: `
@@ -231,13 +227,12 @@ const sendReferralJoinedCelebrationEmail = async (referrer, referral) => {
                   
                   <!-- Celebration Header -->
                   <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px; text-align: center; position: relative; overflow: hidden;">
-                    <!-- Confetti Elements -->
                     <div style="position: absolute; top: 15px; left: 20%; width: 10px; height: 10px; background: #FFD700; border-radius: 50%; opacity: 0.8;"></div>
                     <div style="position: absolute; top: 35px; right: 15%; width: 8px; height: 8px; background: #FF69B4; border-radius: 50%; opacity: 0.7;"></div>
                     <div style="position: absolute; top: 25px; left: 70%; width: 6px; height: 20px; background: #00CED1; border-radius: 3px; opacity: 0.8;"></div>
                     <div style="position: absolute; top: 50px; right: 40%; width: 12px; height: 4px; background: #FFD700; border-radius: 2px; opacity: 0.9;"></div>
                     
-                    <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">🎉</div>
+                    <div style="font-size: 80px; margin-bottom: 20px;">🎉</div>
                     <h1 style="color: white; margin: 0 0 15px 0; font-size: 32px; font-weight: 700; text-shadow: 0 3px 6px rgba(0,0,0,0.2);">
                       SUCCESS!
                     </h1>
@@ -343,11 +338,15 @@ const sendReferralJoinedCelebrationEmail = async (referrer, referral) => {
         </body>
         </html>
       `
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Referral joined celebration email sent successfully:', info.messageId);
-    return info;
+    if (error) {
+      console.error('Error sending referral joined celebration email:', error);
+      throw error;
+    }
+
+    console.log('Referral joined celebration email sent successfully:', data.id);
+    return data;
   } catch (error) {
     console.error('Error sending referral joined celebration email:', error);
     throw error;
