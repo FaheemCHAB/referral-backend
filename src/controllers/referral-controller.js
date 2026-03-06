@@ -31,8 +31,8 @@ const createReferral =  asyncHandler(async (req, res) => {
 
 const updateReferralStatus = asyncHandler(async (req, res) => {
     try {
-        const { userId } = req.params; // This is actually the referralId in your case
-        const { attendanceStatus } = req.body; // Match the frontend's field name
+        const { userId } = req.params; 
+        const { attendanceStatus } = req.body; 
         
         console.log('Referral ID received:', userId); // Log for debugging
         console.log('New status received:', attendanceStatus); // Log for debugging

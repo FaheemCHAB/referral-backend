@@ -1,5 +1,7 @@
 const User = require("../models/user");
 const { sendWelcomeEmail } = require('../utils/emailService');
+const { sendWelcomeMessage } = require('../utils/phoneService');
+const { sendUserToInterakt } = require('../utils/interaktService');
 
 // Fetch all users
 const getAllUsers = async () => {
@@ -20,6 +22,8 @@ const createUser = async (userData) => {
         if (!userData._id || userData._id === "") {
           delete userData._id;
         }
+
+
         
         // Check for existing user
         const existingUser = await User.findOne({
@@ -43,21 +47,53 @@ const createUser = async (userData) => {
         userData.isActive = true;
         const user = await User.create(userData);
         
-        // Send welcome email with credentials
+        // Send user to Interakt
         try {
-            console.log("Sending welcome email...");
-            
-          await sendWelcomeEmail(user);
-          console.log("Welcome email sent successfully");
-        } catch (emailError) {
-          console.error("Failed to send welcome email:", emailError);
+            console.log("Sending user to Interakt...");
+            await sendUserToInterakt(user);
+            console.log("User sent to Interakt successfully");
+        } catch (interaktError) {
+            console.error("Failed to send user to Interakt:", interaktError);
+            // Don't break user creation if Interakt fails
+        }
+        
+        // Send welcome email with credentials
+        if (user.email) {
+            try {
+                console.log("Sending welcome email...");
+                await sendWelcomeEmail(user);
+                console.log("Welcome email sent successfully");
+            } catch (emailError) {
+                console.error("Failed to send welcome email:", emailError);
+            }
+        }
+        
+        // Send welcome WhatsApp message with credentials
+        if (user.mobile) {
+            try {
+                console.log("Sending welcome WhatsApp message...");
+                
+                // Prepare user data for WhatsApp (map your field names)
+                const whatsappUser = {
+                    name: user.name || user.fullName || 'User',
+                    phone: user.mobile,
+                    username: user.username,
+                    password: user.password
+                };
+                
+                await sendWelcomeMessage(whatsappUser);
+                console.log("Welcome WhatsApp message sent successfully",whatsappUser);
+            } catch (whatsappError) {
+                console.error("Failed to send welcome WhatsApp message:", whatsappError);
+                console.error("WhatsApp Error Details:", whatsappError.response?.data || whatsappError.message);
+            }
         }
         
         return user;
-      } catch (error) {
+    } catch (error) {
         if (error.status) throw error;
         throw { status: 500, message: error.message || "An unexpected error occurred." };
-      }
+    }
 };
 
 // Authenticate user
@@ -208,6 +244,18 @@ const getUsersByDateRange = async (query) => {
     }
 };
 
+const getReferralId = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        return user.referralId;
+    } catch (error) {
+        throw new Error("Error occurred while fetching referral ID: " + error.message);
+    }
+};
+
 module.exports = {
     createUser,
     getAllUsers,
@@ -216,5 +264,6 @@ module.exports = {
     updateUser,
     searchUsers,
     getUsersByDateRange,
-    getUserReferralCounts
+    getUserReferralCounts,
+    getReferralId
 };
