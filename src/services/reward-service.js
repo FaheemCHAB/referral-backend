@@ -152,7 +152,10 @@ const updateRewardStatus = async (historyItemId, newStatus) => {
 
 const getRewardsByUserId = async (userId) => {
     try {
-        const rewards = await Reward.find({ user: userId })
+        const rewards = await Reward.find({ user: userId }).populate({
+            path: "history.referralId", // Change this to populate referralId inside history
+            select: "name email mobile" // Select fields you want from the Referral model
+        });
         return rewards;
         
     } catch (error) {
@@ -265,6 +268,73 @@ const updateRewardByrewardId = async (rewardId, data) => {
     } catch (error) {
         console.error("Error updating reward history:", error);
         throw new Error("Error occurred while updating reward history: " + error.message);
+    }
+};
+
+const updateRewardStatusWithSeparateHistory = async (historyItemId, newStatus, updatedBy, remarks = "") => {
+    try {
+        console.log("History ID received:", historyItemId);
+        console.log("Status received:", newStatus);
+        
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(historyItemId)) {
+            console.log("Invalid ObjectId format!");
+            return null;
+        }
+        
+        // Find reward containing the history item ID
+        const reward = await Reward.findOne({
+            "history._id": historyItemId
+        });
+        
+        if (!reward) {
+            console.log("No reward found with this history ID");
+            return null;
+        }
+
+        // Validate new status
+        if (!["pending", "processing", "paid"].includes(newStatus)) {
+            throw new Error("Invalid status value");
+        }
+
+        // Find the history item and update its status
+        const historyItem = reward.history.id(historyItemId);
+        if (!historyItem) {
+            throw new Error("History item not found in reward");
+        }
+        
+        const previousStatus = historyItem.status;
+        
+        // Check if status is actually changing
+        if (previousStatus === newStatus) {
+            console.log("Status is already", newStatus, "- no update needed");
+            return reward;
+        }
+        
+        // Update the history item status
+        historyItem.status = newStatus;
+        historyItem.updatedAt = new Date();
+        
+        // Add entry to status history
+        reward.statusHistory.push({
+            historyItemId: historyItemId,
+            previousStatus: previousStatus,
+            newStatus: newStatus,
+            updatedBy: updatedBy,
+            remarks: remarks || `Status updated from ${previousStatus} to ${newStatus}`,
+            updatedAt: new Date()
+        });
+        
+        // Update the main reward status if needed (business logic dependent)
+        reward.status = newStatus;
+
+        await reward.save();
+        
+        console.log("Status history entry created");
+        return reward;
+    } catch (error) {
+        console.error("Error in service:", error);
+        throw new Error("Error updating reward status: " + error.message);
     }
 };
 

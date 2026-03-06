@@ -13,14 +13,22 @@ const getAllRewards = asyncHandler(async (req, res) => {
 const createOrUpdateReward = asyncHandler(async (req, res) => {
     try {
         const { userId, referralId, amount, status, remarks } = req.body;
-        console.log("Request body:", req.body); // Log the request body for debugging
+        console.log("Request body:", req.body);
         
-
-        if (!userId  || amount == null) {
-            return res.status(400).json({ message: "Missing required fields (userId, amount)" });
+        if (!userId || amount == null) {
+            return res.status(400).json({ 
+                message: "Missing required fields (userId, amount)" 
+            });
         }
 
-        const reward = await rewardService.createOrUpdateReward(userId, referralId , amount, status, remarks);
+        const reward = await rewardService.createOrUpdateReward(
+            userId, 
+            referralId, 
+            amount, 
+            status, 
+            remarks
+        );
+        
         res.status(201).json({ 
             message: "Reward updated successfully", 
             reward 
@@ -45,18 +53,41 @@ const getRewardsByUserId = asyncHandler(async (req, res) => {
 
 const updateRewardStatus = asyncHandler(async (req, res) => {
     try {
-        const { rewardId } = req.params; // Changed from userId to rewardId
-        const { status } = req.body; // Get status from request body
+        const { rewardId } = req.params; // This is actually the historyItemId
+        const { status, remarks } = req.body; // Get status and optional remarks
         
-        const reward = await rewardService.updateRewardStatus(rewardId, status);
+        // Validate required fields
+        if (!status) {
+            return res.status(400).json({ 
+                message: "Status is required" 
+            });
+        }
+
+        // Validate status value
+        if (!["pending", "processing", "paid"].includes(status)) {
+            return res.status(400).json({ 
+                message: "Invalid status. Must be pending, processing, or paid" 
+            });
+        }
+        
+        const reward = await rewardService.updateRewardStatus(rewardId, status, remarks);
         
         if (reward) {
-            res.status(200).json({ message: "Reward status updated successfully", reward });
+            res.status(200).json({ 
+                message: "Reward status updated successfully", 
+                reward,
+                info: "New history entry created to track the status change"
+            });
         } else {
-            res.status(404).json({ message: "Reward not found" });
+            res.status(404).json({ 
+                message: "Reward history item not found" 
+            });
         }
     } catch (error) {
-        res.status(500).json({ message: "Failed to update reward status", error: error.message });
+        res.status(500).json({ 
+            message: "Failed to update reward status", 
+            error: error.message 
+        });
     }
 });
 
@@ -79,10 +110,17 @@ const getAllUserBonusPoints = asyncHandler(async (req, res) => {
 
 const updateRewardByrewardId = asyncHandler(async (req, res) => {
     try {
-        const { rewardId } = req.params; // Changed from userId to rewardId
-        const { amount } = req.body; // Get amount from request body
+        const { rewardId } = req.params;
+        const { data } = req.body; // Extract the data object
         
-        const reward = await rewardService.updateRewardByrewardId(rewardId, amount);
+        console.log('Received request body:', req.body);
+        console.log('Extracted data:', data);
+        
+        if (!data) {
+            return res.status(400).json({ message: "Data is required" });
+        }
+        
+        const reward = await rewardService.updateRewardByrewardId(rewardId, data);
         
         if (reward) {
             res.status(200).json({ message: "Reward updated successfully", reward });
@@ -90,6 +128,7 @@ const updateRewardByrewardId = asyncHandler(async (req, res) => {
             res.status(404).json({ message: "Reward not found" });
         }
     } catch (error) {
+        console.error('Controller error:', error);
         res.status(500).json({ message: "Failed to update reward", error: error.message });
     }
 });

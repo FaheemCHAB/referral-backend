@@ -3,6 +3,7 @@ const userRouter = require("./routes/user-routes");
 const referralRouter = require("./routes/referral-routes");
 const rewardRouter = require("./routes/reward-routes");
 const bonusRouter = require("./routes/bonus-routes");
+const interaktRouter = require("./routes/interakt-routes");
 const connectToDB = require("./config/db");
 const cors = require("cors");
 
@@ -16,7 +17,7 @@ const options = {
     origin: ['http://localhost:4200', process.env.APP_URL],
     credentials: true // if you're using cookies or auth headers
   };
-  
+    
 
 app.use(cors(options));
 
@@ -28,6 +29,7 @@ app.use("/user", userRouter);
 app.use("/referral", referralRouter);
 app.use("/reward", rewardRouter);
 app.use("/bonus", bonusRouter);
+app.use("/interakt", interaktRouter);
 
 const PORT = process.env.PORT || 4000;
 
